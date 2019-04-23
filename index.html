@@ -3,27 +3,31 @@
   <head>
     <meta charset="utf-8">
     <title>Tobacco Death Map</title>
+
+    <script src="d3.js"></script>
+    <script src="queue.js"></script>
+    <script src="topojson.js"></script>
+
     <!-- <script src="http://d3js.org/d3.v4.min.js"></script>
     <script src="http://d3js.org/queue.v1.min.js"></script>
     <script src="http://d3js.org/topojson.v2.min.js"></script> -->
 
-    <script src="d3.js"></script>
-  <script src="queue.js"></script>
-  <script src="topojson.js"></script>
-
     <style>
 
       .country {
-        fill: #DEB887;
-        stroke:#333333;
-        stroke-width:white;
+        fill: #C0C0C0;
+        stroke:black;
+        stroke-width:black;
       }
        svg {
-         background:#D1F2EB;
+         background:white;
        }
 
        .bar {
-            fill: steelblue;
+            fill: #00008B;
+        }
+        .bar2{
+          fill:red;
         }
     </style>
 
@@ -50,13 +54,14 @@
                   .append("g")
                   .attr("transform","translate("+ 0 +","+margin+")");
 
-       var con = svg.append("text");
+       var con = svg.append("text")
+                      .attr("font-size","30px");
 
 
 
       var barchart= d3.select('body')
                       .append('svg')
-                      .style("background","#303030")
+                      .style("background","white")
                       .attr("width",barchart_width )
                       .attr("height",barchart_height);
 
@@ -92,7 +97,7 @@
 
       var barchart_2=d3.select('body')
                       .append('svg')
-                      .style("background","#303030")
+                      .style("background","white")
                       .attr("width",barchart_width )
                       .attr("height",barchart_height);
 
@@ -171,7 +176,7 @@
      svg.selectAll(".city")
           .data(cities)
           .enter().append("circle")
-          .attr("r",4)
+          .attr("r",3)
           .attr("cx",function(d){
             var coords = projection([d.Longitude,d.Lattitude])
             console.log(coords);
@@ -222,11 +227,11 @@
        function onMouseOut(d, i) {
         d3.select(this)
           .attr('r', function(d,i){
-            return 4;
+            return 3.5;
           });
           console.log("mouseout");
 
-          con.text("")
+          con.text("").transition();
 
           //
           // d3.selectAll('.con')
@@ -2817,7 +2822,7 @@
               d3.select(this)
                 .transition()     // adds animation
                 .duration(400)
-                .attr("fill","#26734d")
+                .attr("fill"," #00008B")
                 .attr('width', xScale.bandwidth() + 5)
                 .attr("y", function(d) { return yScale(data.death) - 10; })
                 .attr("height", function(d) { return (barchart_height -margin_bar ) -yScale(data.death) + 10; });
@@ -2891,14 +2896,14 @@
                    .call(xAxis_call_sec);
 
 
-     var bars_sec = barchart_g_sec.selectAll(".bar")
+     var bars_sec = barchart_g_sec.selectAll(".bar2")
                          .remove()
                          .exit()
                          .data(data);
 
              bars_sec.enter()
                   .append("rect")
-                  .attr("class", "bar")
+                  .attr("class", "bar2")
                   .on("mouseout", onMouseOut)//Add listener for the mouseover event
                   .on("mouseover", onMouseOver)// Add listener for mouse events
                   .transition()
@@ -2938,7 +2943,7 @@
     }
 
        function onMouseOut(data,i){
-         d3.select(this).attr('class', 'bar');
+         d3.select(this).attr('class', 'bar2');
          d3.select(this)
          .transition()     // adds animation
          .duration(400)
