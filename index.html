@@ -1,11 +1,2956 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>Hosting</title>
+    <title>Tobacco Death Map</title>
+    <script src="http://d3js.org/d3.v4.min.js"></script>
+    <script src="http://d3js.org/queue.v1.min.js"></script>
+    <script src="http://d3js.org/topojson.v2.min.js"></script>
+
+    <style>
+
+      .country {
+        fill: #DEB887;
+        stroke:#333333;
+        stroke-width:white;
+      }
+       svg {
+         background:#D1F2EB;
+       }
+
+       .bar {
+            fill: steelblue;
+        }
+    </style>
+
   </head>
+
   <body>
+<div id="map"></div>
+
+    <script>
+
+      var width =1200;
+      var height = 600;
+      var margin = 50;
+
+      var barchart_height= 500;
+      var barchart_width = 600;
+      var margin_bar = 200;
+
+      // adding the scg for the map
+      var svg = d3.select('#map')
+                  .append("svg")
+                  .attr("height",height)
+                  .attr("width",width)
+                  .append("g")
+                  .attr("transform","translate("+ 0 +","+margin+")");
+
+       var con = svg.append("text");
+
+
+
+      var barchart= d3.select('body')
+                      .append('svg')
+                      .style("background","#303030")
+                      .attr("width",barchart_width )
+                      .attr("height",barchart_height);
+
+      //Adding the title for the barchart
+      var Title_first_bar =  barchart.append("text")
+                      .attr("transform", "translate(100,0)")
+                      .attr("x", 50)
+                      .attr("y", 50)
+                      .attr("font-size", "24px");
+
+
+
+      var xScale = d3.scaleBand().range ([0,barchart_width -margin_bar ]).padding(0.4);
+      var yScale = d3.scaleLinear().range ([300, 0]);
+
+
+      // positioning the scales
+          var xAxis_call = d3.axisBottom();
+          var yAxis_call = d3.axisLeft();
+
+
+      var barchart_g = barchart.append("g")
+               .attr("transform", "translate(" + 100 + "," + 100 + ")");
+
+       //    Adding  the yaxis These are considered global variables
+              barchart_g.append("g")
+                    .attr("class","y axis");
+
+                      // adding the xaxis
+              barchart_g.append("g")
+                     .attr("class","x axis");
+
+
+      var barchart_2=d3.select('body')
+                      .append('svg')
+                      .style("background","#303030")
+                      .attr("width",barchart_width )
+                      .attr("height",barchart_height);
+
+      //scale for second barchart
+      var xScale_sec = d3.scaleBand().range ([0,barchart_width -margin_bar ]).padding(0.4);
+      var yScale_sec = d3.scaleLinear().range ([300, 0]);
+
+
+          // positioning the scales
+          var xAxis_call_sec = d3.axisBottom();
+          var yAxis_call_sec = d3.axisLeft();
+
+          //Adding title for second barchart
+          //Adding the title for the barchart
+          var Title_second_bar =  barchart_2.append("text")
+                          .attr("transform", "translate(100,0)")
+                          .attr("x", 50)
+                          .attr("y", 50)
+                          .attr("font-size", "24px");
+
+
+
+                var barchart_g_sec = barchart_2.append("g")
+                            .attr("transform", "translate(" + 100 + "," + 100 + ")");
+
+                       //    Adding  the yaxis These are considered global variables
+                      barchart_g_sec.append("g")
+                                .attr("class","y axis");
+
+                            // adding the xaxis
+                            barchart_g_sec.append("g")
+                                     .attr("class","x axis");
+                                     //title con
+
+
+
+
+     var country_choose=true;
+
+
+
+
+  queue()
+  	.defer(d3.json, 'world-110m2.json')
+    .defer(d3.csv,'tobacco_countries.csv')
+  	.await(makeMyMap);
+
+
+    //using projection
+    var projection = d3.geoMercator()
+                        .translate([width/2,height/2])
+                        .scale(150);  // we want it to go on centre
+
+    // need a path to drw the coordinates
+    var path = d3.geoPath()
+                  .projection(projection);
+
+
+    function makeMyMap(error,data,cities){
+      console.log(data);
+
+      var countries = topojson.feature(data,data.objects.countries).features;
+
+
+
+      //Adding a pth for all countries
+     svg.selectAll(".country")
+        .data(countries)
+        .enter().append("path")
+        .attr("class","country")
+        .attr("d",path);
+
+
+
+
+     svg.selectAll(".city")
+          .data(cities)
+          .enter().append("circle")
+          .attr("r",4)
+          .attr("cx",function(d){
+            var coords = projection([d.Longitude,d.Lattitude])
+            console.log(coords);
+            return coords[0];
+          })
+          .attr("cy",function(d){
+            var coords = projection([d.Longitude,d.Lattitude])
+            return coords[1];
+          })
+          .on("click",function(d){// Adding the function onclick
+            load_country_chosen_file(d.Country);
+          })
+         .on("mouseover",onMouseOver)
+         .on("mouseout",onMouseOut)
+         .attr("fill",function(d){
+           console.log("color of country");
+           console.log(d.color);
+           return d.color;
+         });
+
+
+
+          //mouseover event handler function
+       function onMouseOver(data, i) {
+         var chosen_display;
+         var coords = projection([data.Longitude,data.Lattitude]);
+           d3.select(this)
+           .attr('r', function(d,i){
+             chosen_display=d.Country;
+               return 9+i;
+            })
+             .transition()     // adds animation
+             .duration(400);
+              console.log("mouseover");
+
+              con.text(function(d){
+                console.log(chosen_display);
+                return chosen_display;
+              })
+              .attr("x",10)
+              .attr("y",100)
+              .attr("dx",10)
+              .attr("dy",100);
+
+
+       }
+
+       function onMouseOut(d, i) {
+        d3.select(this)
+          .attr('r', function(d,i){
+            return 4;
+          });
+          console.log("mouseout");
+
+          con.text("")
+
+          //
+          // d3.selectAll('.con')
+          // .transition()
+          // .remove();
+
+    }
+
+
+       // svg.selectAll(".country_label")
+       //       .data(cities)
+       //       .enter().append("text")
+       //       .attr("class","country_label")
+       //       .attr("x",function(d){
+       //        var coords = projection([d.Longitude,d.Lattitude]);
+       //        console.log("project");
+       //        console.log(coords);
+       //        return coords[0];
+       //       })
+       //       . attr("y", function(d){
+       //        var coords = projection([d.Longitude,d.Lattitude]);
+       //        return coords[1];
+       //      });
+            // .text(function(d){
+            //   return d.Country;
+            // });
+            // .attr("dy",10);
+     }
+
+
+
+
+
+
+    function load_country_chosen_file(chosen_country){
+        switch (chosen_country) {
+          case "Afghanistan":
+            var coun="Afghanistan";
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+            break;
+
+
+          case "Albania":
+          var coun="Albania";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+              country_choose= true;
+          }
+          break;
+
+
+          case "Algeria":
+          var coun="Algeria";
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "American Samoa":
+          var coun="American Samoa";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Andorra":
+          var coun="Andorra";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Angola":
+          var coun="Angola";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Antigua and Barbuda":
+          var coun="Antigua and Barbuda";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Argentina":
+          var coun="Argentina";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Armenia":
+          var coun="Armenia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Australia":
+          var coun="Australia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Austria":
+          var coun="Austria";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Azerbaijan":
+          var coun="Azerbaijan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bahamas":
+          var coun="Bahamas";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bahrain":
+          var coun="Bahrain";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bangladesh":
+          var coun="Bangladesh";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Barbados":
+          var coun="Barbados";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Belarus":
+          var coun="Belarus";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Belgium":
+          var coun="Belgium";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Belize":
+          var coun="Belize";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Benin":
+          var coun="Benin";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bermuda":
+          var coun="Bermuda";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bhutan":
+          var coun="Bhutan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bolivia":
+          var coun="Bolivia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bosnia":
+          var coun="Bosnia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Botswana":
+          var coun="Botswana";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Brazil":
+          var coun="Brazil";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Brunei":
+          var coun="Brunei";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Bulgaria":
+          var coun="Bulgaria";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Burkina":
+          var coun="Burkina";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Burundi":
+          var coun="Burundi";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Cambodia":
+          var coun="Cambodia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Cameroon":
+          var coun="Cameroon";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Canada":
+          var coun="Canada";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Cape Verde":
+          var coun="Cape Verde";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Caribbean":
+          var coun="Caribbean";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Central African Republic":
+          var coun="Central African Republic";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Central Asia":
+          var coun="Central Asia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Central Europe":
+          var coun="Central Europe";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Central Sub-Saharan Africa":
+          var coun="Central Sub-Saharan Africa";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Chad":
+          var coun="Chad";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Chile":
+          var coun="Chile";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "China":
+          var coun="China";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Colombia":
+          var coun="Colombia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Comoros":
+          var coun="Comoros";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Congo":
+          var coun="Congo";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Costa Rica":
+          var coun="Costa Rica";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Cote d'Ivoire":
+          var coun="Cote d'Ivoire";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Croatia":
+          var coun="Croatia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Cuba":
+          var coun="Cuba";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Cyprus":
+          var coun="Cyprus";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Czech Republic":
+          var coun="Czech Republic";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Democratic Republic of Congo":
+          var coun="Democratic Republic of Congo";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Denmark":
+          var coun="Denmark";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Djibouti":
+          var coun="Djibouti";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Dominica":
+          var coun="Dominica";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Dominican Republic":
+          var coun="Dominican Republic";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "East Asia":
+          var coun="East Asia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Eastern Europe":
+          var coun="Eastern Europe";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Eastern Sub-Saharan Africa":
+          var coun="Eastern Sub-Saharan Africa";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Ecuador":
+          var coun="Ecuador";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Egypt":
+          var coun="Egypt";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "El Salvador":
+          var coun="El Salvador";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "England":
+          var coun="England";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Equatorial Guine":
+          var coun="Equatorial Guine";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Eritrea":
+          var coun="Eritrea";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Estonia":
+          var coun="Estonia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Ethiopia":
+          var coun="Ethiopia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Fiji":
+          var coun="Fiji";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Finland":
+          var coun="Finland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "France":
+          var coun="France";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Gabon":
+          var coun="Gabon";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Gambia":
+          var coun="Gambia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Georgia":
+          var coun="Georgia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Germany":
+          var coun="Germany";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Ghana":
+          var coun="Ghana";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Greece":
+          var coun="Greece";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Greenland":
+          var coun="Greenland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Grenada":
+          var coun="Grenada";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Guam":
+          var coun="Guam";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Guatemala":
+          var coun="Guatemala";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Guinea":
+          var coun="Guinea";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Guyana":
+          var coun="Guyana";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Haiti":
+          var coun="Haiti";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Honduras":
+          var coun="Honduras";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Hungary":
+          var coun="Hungary";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Iceland":
+          var coun="Iceland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "India":
+          var coun="India";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Indonesia":
+          var coun="Indonesia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Iran":
+          var coun="Iran";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Iraq":
+          var coun="Iraq";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Ireland":
+          var coun="Ireland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Israel":
+          var coun="Israel";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Italy":
+          var coun="Italy";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Jamaica":
+          var coun="Jamaica";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Japan":
+          var coun="Japan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Jordan":
+          var coun="Jordan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Kazakhstan":
+          var coun="Kazakhstan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Kenya":
+          var coun="Kenya";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Kiribati":
+          var coun="Kiribati";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Kuwait":
+          var coun="Kuwait";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Kyrgyzstan":
+          var coun="Kyrgyzstan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Latin America and Caribbean":
+          var coun="Latin America and Caribbean";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Latvia":
+          var coun="Latvia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Lebanon":
+          var coun="Lebanon";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Lesotho":
+          var coun="Lesotho";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Liberia":
+          var coun="Liberia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Libya":
+          var coun="Libya";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Lithuania":
+          var coun="Lithuania";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Luxembourg":
+          var coun="Luxembourg";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Macedonia":
+          var coun="Macedonia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Madagascar":
+          var coun="Madagascar";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Malawi":
+          var coun="Malawi";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Maldives":
+          var coun="Maldives";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Mali":
+          var coun="Mali";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Malta":
+          var coun="Malta";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Marshall Islands":
+          var coun="Marshall Islands";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Mauritania":
+          var coun="Mauritania";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Mauritius":
+          var coun="Mauritius";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Mexico":
+          var coun="Mexico";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Micronesia":
+          var coun="Micronesia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Moldova":
+          var coun="Moldova";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Mongolia":
+          var coun="Mongolia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Montenegro":
+          var coun="Montenegro";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Morocco":
+          var coun="Morocco";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Mozambique":
+          var coun="Mozambique";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Myanmar":
+          var coun="Myanmar";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Namibia":
+          var coun="Namibia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Nepal":
+          var coun="Nepal";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Netherlands":
+          var coun="Netherlands";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "New Zealand":
+          var coun="New Zealand";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Nicaragua":
+          var coun="Nicaragua";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Niger":
+          var coun="Niger";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Nigeria":
+          var coun="Nigeria";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "North America":
+          var coun="North America";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "North Korea":
+          var coun="North Korea";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Northern Ireland":
+          var coun="Northern Ireland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Norway":
+          var coun="Norway";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Oceania":
+          var coun="Oceania";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Oman":
+          var coun="Oman";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Pakistan":
+          var coun="Pakistan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Panama":
+          var coun="Panama";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Papua New Guinea":
+          var coun="Papua New Guinea";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Paraguay":
+          var coun="Paraguay";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+
+          case "Peru":
+          var coun="Peru";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Philippines":
+          var coun="Philippines";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Poland":
+          var coun="Poland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Portugal":
+          var coun="Portugal";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Puerto":
+          var coun="Puerto";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Qatar":
+          var coun="Qatar";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Romania":
+          var coun="Romania";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Russia":
+          var coun="Russia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Rwanda":
+          var coun="Rwanda";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Saint Lucia":
+          var coun="Saint Lucia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Saint Vincent and the Grenadines":
+          var coun="Saint Vincent and the Grenadines";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Sao Tome and Principe":
+          var coun="Sao Tome and Principe";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Saudi Arabia":
+          var coun="Saudi Arabia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Senegal":
+          var coun="Senegal";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Serbia":
+          var coun="Serbia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Seychelles":
+          var coun="Seychelles";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Sierra Leone":
+          var coun="Sierra Leone";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Singapore":
+          var coun="Singapore";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Slovakia":
+          var coun="Slovakia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Slovenia":
+          var coun="Slovenia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Solomon Islands":
+          var coun="Solomon Islands";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Somalia":
+          var coun="Somalia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "South Africa":
+          var coun="South Africa";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "South Korea":
+          var coun="South Korea";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "South Sudan":
+          var coun="South Sudan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Spain":
+          var coun="Spain";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Sri Lanka":
+          var coun="Sri Lanka";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Sudan":
+          var coun="Sudan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Suriname":
+          var coun="Suriname";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Swaziland":
+          var coun="Swaziland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Sweden":
+          var coun="Sweden";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Switzerland":
+          var coun="Switzerland";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Syria":
+          var coun="Syria";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Taiwan":
+          var coun="Taiwan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Tajikistan":
+          var coun="Tajikistan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Tanzania":
+          var coun="Tanzania";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Thailand":
+          var coun="Thailand";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Timor":
+          var coun="Timor";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Togo":
+          var coun="Togo";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Tonga":
+          var coun="Tonga";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+          case "Trinidad and Tobago":
+          var coun="Trinidad and Tobago";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+
+
+          case "Tunisia":
+          var coun="Tunisia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+
+          case "Turkey":
+          var coun="Turkey";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+
+          case "Turkmenistan":
+          var coun="Turkmenistan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+
+          case "Uganda":
+          var coun="Uganda";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+
+          case "Ukraine":
+          var coun="Ukraine";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+
+          case "United Arab Emirates":
+          var coun="United Arab Emirates";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "United Kingdom":
+          var coun="United Kingdom";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "United States":
+          var coun="United States";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Uruguay":
+          var coun="Uruguay";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Uzbekistan":
+          var coun="Uzbekistan";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Vanuatu":
+          var coun="Vanuatu";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Venezuela":
+          var coun="Venezuela";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Vietnam":
+          var coun="Vietnam";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Yemen":
+          var coun="Yemen";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Zambia":
+          var coun="Zambia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+          case "Zimbabwe":
+          var coun="Zimbabwe";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
+
+
+            default:
+
+        }
+
+    }
+
+
+
+
+  function load_csv(country_name){
+
+   var string = country_name +".csv";
+      console.log(string);
+        d3.csv(string,function(data){
+          console.log(data);
+
+          xScale.domain(data.map(function(data) {
+            console.log(data); return data.year; }));
+
+            xAxis_call.scale(xScale)
+
+            data.forEach(function(d) {
+                        d.death = d.death;
+                        d.death = parseInt(d.death);
+
+                    });
+
+          yScale.domain([0, d3.max(data, function(data) { return data.death; })]);
+          yAxis_call.scale(yScale)
+
+
+          //Adding the Title
+
+          Title_first_bar.text(country_name);
+
+
+          // important to separate the two codes
+    barchart_g.select(".y")
+              .transition()
+              .call(yAxis_call);
+
+
+        barchart_g.select(".x")
+            .transition(400)
+              .attr("transform" , "translate(0," +  (barchart_height - margin_bar) + ")")
+                .call(xAxis_call);
+
+
+      var bars = barchart_g.selectAll(".bar")
+                      .remove()
+                      .exit()
+                      .data(data);
+
+          bars.enter()
+               .append("rect")
+               .attr("class", "bar")
+               .on("mouseout", onMouseOut)//Add listener for the mouseover event
+               .on("mouseover", onMouseOver)// Add listener for mouse events
+               .transition()
+               .duration(500)
+               .attr("x", function(data) { return xScale(data.year); })
+               .attr("y", function(data) {console.log(yScale(data.death)); return yScale(data.death); })
+               .attr("width", xScale.bandwidth())
+                .attr("height", function(data) {
+                 return (barchart_height -margin_bar ) - yScale(data.death); });
+
+      });
+
+
+               //mouseover event handler function
+          function onMouseOver(data, i) {
+              d3.select(this).attr('class', 'highlight');
+              d3.select(this)
+                .transition()     // adds animation
+                .duration(400)
+                .attr("fill","#26734d")
+                .attr('width', xScale.bandwidth() + 5)
+                .attr("y", function(d) { return yScale(data.death) - 10; })
+                .attr("height", function(d) { return (barchart_height -margin_bar ) -yScale(data.death) + 10; });
+
+              barchart_g.append("text")
+               .attr('class', 'val')
+               .attr('x', function() {
+                   return xScale(data.year);
+               })
+               .attr('y', function() {
+                   return yScale(data.death) - 15;
+               })
+               .text(function() {
+                   return data.death;  // Value of the text
+               });
+          }
+
+             function onMouseOut(data,i){
+               d3.select(this).attr('class', 'bar');
+               d3.select(this)
+               .transition()     // adds animation
+               .duration(400)
+               .attr('width', xScale.bandwidth())
+               .attr("y", function(d) { return yScale(d.death); })
+               .attr("height", function(d) { return (barchart_height -margin_bar) - yScale(d.death); });
+
+           d3.selectAll('.val')
+             .remove()
+         }
+
+
+    }
+
+
+    function load_csv_sec(country_name){
+
+      var string = country_name +".csv";
+         console.log(string);
+           d3.csv(string,function(data){
+             console.log(data);
+
+             xScale_sec.domain(data.map(function(data) {
+               console.log(data); return data.year; }));
+
+               xAxis_call_sec.scale(xScale_sec)
+
+               data.forEach(function(d) {
+                           d.death = d.death;
+                           d.death = parseInt(d.death);
+
+                       });
+
+                       console.log("max data");
+                       console.log(d3.max(data, function(data) { return data.death; }));
+             yScale_sec.domain([0, d3.max(data, function(data) { return data.death; })]);
+             yAxis_call_sec.scale(yScale_sec);
+
+             //Adding title for second barchart
+             Title_second_bar.text(country_name);
+
+
+             // important to separate the two codes
+       barchart_g_sec.select(".y")
+                 .transition()
+                 .call(yAxis_call_sec);
+
+
+           barchart_g_sec.select(".x")
+               .transition(400)
+                 .attr("transform" , "translate(0," +  (barchart_height - margin_bar) + ")")
+                   .call(xAxis_call_sec);
+
+
+     var bars_sec = barchart_g_sec.selectAll(".bar")
+                         .remove()
+                         .exit()
+                         .data(data);
+
+             bars_sec.enter()
+                  .append("rect")
+                  .attr("class", "bar")
+                  .on("mouseout", onMouseOut)//Add listener for the mouseover event
+                  .on("mouseover", onMouseOver)// Add listener for mouse events
+                  .transition()
+                  .duration(500)
+                  .attr("x", function(data) { return xScale_sec(data.year); })
+                  .attr("y", function(data) {console.log(yScale_sec(data.death)); return yScale_sec(data.death); })
+                  .attr("width", xScale_sec.bandwidth())
+                   .attr("height", function(data) {
+                    return (barchart_height -margin_bar ) - yScale_sec(data.death); });
+
+
+         });
+
+
+         //mouseover event handler function
+    function onMouseOver(data, i) {
+        d3.select(this).attr('class', 'highlight');
+        d3.select(this)
+          .transition()     // adds animation
+          .duration(400)
+            .attr("fill","red")
+          .attr('width', xScale_sec.bandwidth() + 5)
+          .attr("y", function(d) { return yScale_sec(data.death) - 10; })
+          .attr("height", function(d) { return (barchart_height -margin_bar ) -yScale_sec(data.death) + 10; });
+
+        barchart_g_sec.append("text")
+         .attr('class', 'val')
+         .attr('x', function() {
+             return xScale_sec(data.year);
+         })
+         .attr('y', function() {
+             return yScale_sec(data.death) - 15;
+         })
+         .text(function() {
+             return data.death;  // Value of the text
+         });
+    }
+
+       function onMouseOut(data,i){
+         d3.select(this).attr('class', 'bar');
+         d3.select(this)
+         .transition()     // adds animation
+         .duration(400)
+         .attr('width', xScale_sec.bandwidth())
+         .attr("y", function(d) { return yScale_sec(d.death); })
+         .attr("height", function(d) { return (barchart_height -margin_bar) - yScale_sec(d.death); });
+
+     d3.selectAll('.val')
+       .remove()
+   }
+
+
+         }
+
+    </script>
+
 
   </body>
 </html>
