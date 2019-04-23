@@ -1638,6 +1638,17 @@
           }
           break;
 
+          case "Malaysia":
+          var coun="Malaysia";
+
+          if (country_choose == true){
+            load_csv(coun);
+            country_choose= false;
+          }else{
+            load_csv_sec(coun);
+            country_choose= true;
+          }
+          break;
 
           case "Maldives":
           var coun="Maldives";
